@@ -1,0 +1,24 @@
+server:
+  port: 8080
+  ssl:
+    enabled: false
+    protocol: TLS
+    key-store: classpath:https.keystore
+    key-store-password: 123456
+    key-store-type: JKS
+    key-alias: https
+
+logging:
+  level:
+    root: info
+
+spring:
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    serialization:
+      indent-output: true
+  resources:
+    static-locations: classpath:/static/
+
+
