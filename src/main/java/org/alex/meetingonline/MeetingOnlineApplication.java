@@ -1,4 +1,4 @@
-package com.gitlab.alex.meetingonline;
+package org.alex.meetingonline;
 
 
 import org.springframework.boot.SpringApplication;

@@ -38,18 +38,21 @@ var iceServer = {
 };
 
 var socket;
+var stompClient;
 let host = 'ws://192.168.33.172';
 // let host = 'ws://192.168.3.6';
 
+const loginButton = document.getElementById('loginButton');
 const prepareButton = document.getElementById('prepareButton');
 const startButton = document.getElementById('startButton');
 const hangupButton = document.getElementById('hangupButton');
 
-prepareButton.disabled = false;
+prepareButton.disabled = true;
 startButton.disabled = true;
 hangupButton.disabled = true;
 
 // Add click event handlers for buttons.
+loginButton.addEventListener('click', loginAction);
 prepareButton.addEventListener('click', prepareAction);
 startButton.addEventListener('click', startAction);
 hangupButton.addEventListener('click', hangupAction);
@@ -59,14 +62,49 @@ function prepareAction(){
   prepareButton.disabled = true;
   startButton.disabled = false;
   hangupButton.disabled = true;
-  initSocket();
   initPeer();
 }
 
-function initSocket(){
-  socket = new WebSocket(host+":8080/meeting-online");
-  socket.onmessage = onSocketMessage;
+function loginAction(){
+  initSocket();
 }
+
+function initSocket(){
+  socket = new SockJS("/meeting/");
+  stompClient = Stomp.over(socket);
+  var headers = {
+    roomId: $("#roomId").val(),
+    username: $("#username").val(),
+    password: $("#password").val()
+  };
+  stompClient.connect(headers, function (frame) {
+    prepareButton.disabled = false;
+    console.log('Connected: ' + frame);
+    stompClient.subscribe('/user/' + $("#username").val() + '/meetingRoom/'+$("#roomId").val(), function (msg) {
+      var json = JSON.parse(msg.body);
+      console.log('onmessage: ', json);
+      //如果是一个ICE的候选，则将其加入到PeerConnection中，否则设定对方的session描述为传递过来的描述
+      if( json.event === "_ice_candidate" ){
+        console.log("add ice candidate ", json.data.candidate)
+        localPeerConnection.addIceCandidate(new RTCIceCandidate(json.data.candidate));
+      } else {
+        localPeerConnection.setRemoteDescription(new RTCSessionDescription(json.data.sdp));
+        // 如果是一个offer，那么需要回复一个answer
+        if(json.event === "_offer") {
+          localPeerConnection.createAnswer(sendAnswerFn, function (error) {
+            console.log('Failure callback: ' + error);
+          });
+        }
+      }
+    });
+  });
+}
+
+
+
+
+
+
 function initPeer(){
   // Create peer connections and add behavior.
   localPeerConnection = new RTCPeerConnection(iceServer);
@@ -141,7 +179,7 @@ function callAction() {
 
 function handleConnection(event) {
   if (event.candidate !== null) {
-    socket.send(JSON.stringify({
+    stompClient.send("/app/meetingRoomServer/"+$("#roomId").val(), {}, JSON.stringify({
       "event": "_ice_candidate",
       "data": {
         "candidate": event.candidate
@@ -173,7 +211,7 @@ function createdOffer(description) {
       console.log(`localPeerConnection setLocalDescription complete.`);
     }).catch(setSessionDescriptionError);
 
-  socket.send(JSON.stringify({
+  stompClient.send("/app/meetingRoomServer/"+$("#roomId").val(), {}, JSON.stringify({
     "event": "_offer",
     "data": {
       "sdp": description
@@ -183,6 +221,7 @@ function createdOffer(description) {
 
 function hangupAction() {
   localPeerConnection.close();
+  stompClient.disconnect();
   socket.close();
   localStream.getTracks().forEach(function(track){
     track.stop();
@@ -221,7 +260,7 @@ onSocketMessage = function(event){
 
 sendAnswerFn = function(desc){
   localPeerConnection.setLocalDescription(desc);
-  socket.send(JSON.stringify({
+  stompClient.send("/app/meetingRoomServer/"+$("#roomId").val(), {}, JSON.stringify({
     "event": "_answer",
     "data": {
       "sdp": desc

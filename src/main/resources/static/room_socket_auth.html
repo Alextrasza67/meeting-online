@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>This is Room</title>
+  <link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+<h1>Realtime communication with WebRTC</h1>
+
+<video id="localVideo" autoplay playsinline muted></video>
+<video id="remoteVideo" autoplay playsinline ></video>
+
+<div>
+  <button id="loginButton">Login</button>
+  <button id="prepareButton">Prepare</button>
+  <button id="startButton">Open</button>
+  <button id="hangupButton">Hang Up</button>
+</div>
+<div>
+  roomId: <input id="roomId" type="input"/>
+  username: <input id="username" type="input"/>
+  password: <input id="password" type="password"/>
+</div>
+
+<script src="js/adapter-latest.js"></script>
+<script src="js/jquery.min.js"></script>
+<script src="js/sockjs.min.js"></script>
+<script src="js/stomp.js"></script>
+<script src="js/room_socket_auth.js"></script>
+</body>
+</html>
