@@ -1,7 +1,7 @@
 server:
   port: 8080
   ssl:
-    enabled: false
+    enabled: true
     protocol: TLS
     key-store: classpath:https.keystore
     key-store-password: 123456

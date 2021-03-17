@@ -39,7 +39,7 @@ var iceServer = {
 
 var socket;
 var stompClient;
-let host = 'ws://192.168.33.172';
+let host = 'wss://172.16.92.37';
 // let host = 'ws://192.168.3.6';
 
 const loginButton = document.getElementById('loginButton');
@@ -97,6 +97,14 @@ function initSocket(){
         }
       }
     });
+  }, function (frame) {
+    try{
+      if(frame.headers.message.indexOf("websocket认证失败")>-1){
+        console.log("websocket认证失败");
+        alert("登录失败");
+      }
+    }catch (e) {
+    }
   });
 }
 
